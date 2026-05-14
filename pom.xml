@@ -12,13 +12,37 @@
   <name>supply-chain-maven-plugin</name>
   <description>Supply-chain hardening checks for Maven builds (min release age, PGP, baseline, etc.).</description>
   <url>https://github.com/wlami/supply-chain-maven-plugin</url>
+  <inceptionYear>2026</inceptionYear>
 
   <licenses>
     <license>
-      <name>The Apache Software License, Version 2.0</name>
+      <name>Apache License, Version 2.0</name>
       <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
     </license>
   </licenses>
+
+  <developers>
+    <developer>
+      <id>wlami</id>
+      <name>Wladi Mitzel</name>
+      <email>mitzel@tawadi.de</email>
+      <organization>wlami</organization>
+      <organizationUrl>https://wlami.com</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/wlami/supply-chain-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:wlami/supply-chain-maven-plugin.git</developerConnection>
+    <url>https://github.com/wlami/supply-chain-maven-plugin</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub Issues</system>
+    <url>https://github.com/wlami/supply-chain-maven-plugin/issues</url>
+  </issueManagement>
 
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
@@ -32,6 +56,11 @@
     <junit.version>5.10.3</junit.version>
     <assertj.version>3.26.3</assertj.version>
     <json-schema-validator.version>1.5.1</json-schema-validator.version>
+
+    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+    <maven-javadoc-plugin.version>3.10.0</maven-javadoc-plugin.version>
+    <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+    <central-publishing-maven-plugin.version>0.6.0</central-publishing-maven-plugin.version>
   </properties>
 
   <dependencies>
@@ -128,4 +157,70 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>${maven-source-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals><goal>jar-no-fork</goal></goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven-javadoc-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals><goal>jar</goal></goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven-gpg-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals><goal>sign</goal></goals>
+                <configuration>
+                  <!-- Read passphrase from MAVEN_GPG_PASSPHRASE env var in CI. -->
+                  <gpgArguments>
+                    <arg>--pinentry-mode</arg>
+                    <arg>loopback</arg>
+                  </gpgArguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>${central-publishing-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+              <!-- Set to true if you want automatic release after staging validation succeeds. -->
+              <autoPublish>false</autoPublish>
+              <waitUntil>published</waitUntil>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

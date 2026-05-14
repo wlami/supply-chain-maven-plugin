@@ -70,6 +70,59 @@ Pin to `groupId:artifactId`. Avoid `groupId:*` - it matches future artifacts you
 
 See `docs/superpowers/specs/2026-05-14-supply-chain-maven-plugin-design.md`.
 
+## Releasing to Maven Central
+
+This project publishes to Maven Central via the Sonatype Central Portal (`central.sonatype.com`).
+
+### One-time setup
+
+1. **Claim the `com.wlami` namespace** on Central Portal:
+   - Sign in at https://central.sonatype.com.
+   - Add the namespace `com.wlami`.
+   - Add the requested DNS TXT record on `wlami.com` (Central Portal shows the exact value).
+   - Wait for verification.
+
+2. **Generate a PGP key** if you don't have one:
+   ```bash
+   gpg --gen-key                                  # use mitzel@tawadi.de
+   gpg --list-secret-keys --keyid-format LONG
+   gpg --keyserver keyserver.ubuntu.com --send-keys <KEY_ID>
+   ```
+
+3. **Generate a Central Portal user token** (UI → Account → User Tokens). Add it to `~/.m2/settings.xml`:
+   ```xml
+   <settings>
+     <servers>
+       <server>
+         <id>central</id>
+         <username>TOKEN_USERNAME</username>
+         <password>TOKEN_PASSWORD</password>
+       </server>
+     </servers>
+   </settings>
+   ```
+
+### Release
+
+```bash
+# 1. Drop -SNAPSHOT and tag.
+mvn versions:set -DnewVersion=0.1.0
+git commit -am "release: 0.1.0"
+git tag v0.1.0
+
+# 2. Deploy via release profile (signs + uploads to Central Portal).
+MAVEN_GPG_PASSPHRASE=... mvn -Prelease clean deploy
+
+# 3. Promote in Central Portal UI (or set autoPublish=true in pom).
+
+# 4. Bump to next snapshot.
+mvn versions:set -DnewVersion=0.2.0-SNAPSHOT
+git commit -am "chore: bump to 0.2.0-SNAPSHOT"
+git push --follow-tags
+```
+
+`autoPublish=false` keeps a manual gate so you can inspect the staged bundle in the Central Portal UI before it goes live. Flip to `true` once you trust the pipeline.
+
 ## License
 
 Apache-2.0.
