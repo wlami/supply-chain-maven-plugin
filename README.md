@@ -72,56 +72,64 @@ See `docs/superpowers/specs/2026-05-14-supply-chain-maven-plugin-design.md`.
 
 ## Releasing to Maven Central
 
-This project publishes to Maven Central via the Sonatype Central Portal (`central.sonatype.com`).
+Releases run on GitHub Actions via `.github/workflows/release.yml`. The workflow signs with PGP and publishes through the Sonatype Central Portal.
 
-### One-time setup
+### Signing key
 
-1. **Claim the `com.wlami` namespace** on Central Portal:
-   - Sign in at https://central.sonatype.com.
-   - Add the namespace `com.wlami`.
-   - Add the requested DNS TXT record on `wlami.com` (Central Portal shows the exact value).
-   - Wait for verification.
+| | |
+|---|---|
+| Fingerprint | `84B3FFEC2085A4CBC92D0DF759E617E4BBD5963D` |
+| Email | `mitzel@tawadi.de` |
+| Stored as | GitHub Actions secrets `MAVEN_GPG_PRIVATE_KEY` + `MAVEN_GPG_PASSPHRASE` |
+| Local backup | `~/Library/Application Support/wlami/supply-chain-mvn-plugin-signing.txt` (mode 600) |
+| Uploaded to | `keys.openpgp.org` (verify email link to publish UID) |
 
-2. **Generate a PGP key** if you don't have one:
-   ```bash
-   gpg --gen-key                                  # use mitzel@tawadi.de
-   gpg --list-secret-keys --keyid-format LONG
-   gpg --keyserver keyserver.ubuntu.com --send-keys <KEY_ID>
-   ```
+### GitHub Actions secrets
 
-3. **Generate a Central Portal user token** (UI → Account → User Tokens). Add it to `~/.m2/settings.xml`:
-   ```xml
-   <settings>
-     <servers>
-       <server>
-         <id>central</id>
-         <username>TOKEN_USERNAME</username>
-         <password>TOKEN_PASSWORD</password>
-       </server>
-     </servers>
-   </settings>
-   ```
+| Secret | Purpose |
+|---|---|
+| `MAVEN_CENTRAL_USERNAME` | Sonatype Central Portal user token (username) |
+| `MAVEN_CENTRAL_PASSWORD` | Sonatype Central Portal user token (password) |
+| `MAVEN_GPG_PRIVATE_KEY` | Armored private key for signing |
+| `MAVEN_GPG_PASSPHRASE` | Passphrase for the key |
 
-### Release
+### Cutting a release
+
+Two ways:
+
+**A. Tag-driven** (recommended once `autoPublish=true`):
 
 ```bash
-# 1. Drop -SNAPSHOT and tag.
-mvn versions:set -DnewVersion=0.1.0
+mvn versions:set -DnewVersion=0.1.0 -DgenerateBackupPoms=false
 git commit -am "release: 0.1.0"
 git tag v0.1.0
-
-# 2. Deploy via release profile (signs + uploads to Central Portal).
-MAVEN_GPG_PASSPHRASE=... mvn -Prelease clean deploy
-
-# 3. Promote in Central Portal UI (or set autoPublish=true in pom).
-
-# 4. Bump to next snapshot.
-mvn versions:set -DnewVersion=0.2.0-SNAPSHOT
-git commit -am "chore: bump to 0.2.0-SNAPSHOT"
-git push --follow-tags
+git push --follow-tags origin main
 ```
 
-`autoPublish=false` keeps a manual gate so you can inspect the staged bundle in the Central Portal UI before it goes live. Flip to `true` once you trust the pipeline.
+**B. Manual dispatch:** trigger `Release` workflow in the Actions tab; pass `version=0.1.0`.
+
+After the workflow finishes, the bundle is staged on Central Portal awaiting manual promotion (because `autoPublish=false` in `pom.xml`). Promote it in the Central Portal UI. Flip `autoPublish` to `true` once you trust the pipeline.
+
+Then bump to the next snapshot:
+
+```bash
+mvn versions:set -DnewVersion=0.2.0-SNAPSHOT -DgenerateBackupPoms=false
+git commit -am "chore: bump to 0.2.0-SNAPSHOT"
+git push
+```
+
+### Local release (fallback)
+
+```bash
+MAVEN_GPG_PASSPHRASE=$(cat ~/Library/Application\ Support/wlami/supply-chain-mvn-plugin-signing.txt | awk '/^Passphrase: / {print $2}') \
+  mvn -Prelease clean deploy
+```
+
+Requires `~/.m2/settings.xml` with the Central Portal token under `<server id="central">`.
+
+## Contributing
+
+All changes land via pull request - `main` is the release-tracking branch and accepts merges from feature branches only. CI runs on every PR.
 
 ## License
 
