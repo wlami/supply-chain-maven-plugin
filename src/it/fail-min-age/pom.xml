@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.wlami.it</groupId>
+  <artifactId>fail-min-age</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>2.0.13</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.wlami</groupId>
+        <artifactId>supply-chain-maven-plugin</artifactId>
+        <version>@project.version@</version>
+        <executions><execution><goals><goal>check</goal></goals></execution></executions>
+        <configuration>
+          <minReleaseAge>P3650D</minReleaseAge>
+          <checks>
+            <pgpSignature>false</pgpSignature>
+            <repositoryAllowlist>false</repositoryAllowlist>
+          </checks>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
