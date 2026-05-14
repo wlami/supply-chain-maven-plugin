@@ -59,7 +59,7 @@ Each check is independently toggleable. Defaults are tuned for "sane hardening" 
 
 | ID | Default | Purpose |
 |---|---|---|
-| `minReleaseAge` | `P3D` | Reject any dependency artifact whose Central publish timestamp is younger than the configured duration. 3 days follows the article's npm guidance: most supply-chain compromises are detected within hours; 3 days buys quiet time. |
+| `minReleaseAge` | `P3D` | Reject any dependency artifact whose Central publish timestamp is younger than the configured duration. 3 days follows the article's npm guidance: most supply-chain compromises are detected within hours; 3 days buys quiet time. Configurable per-artifact via `<overrides>` and via the dedicated `<minReleaseAgeExclusions>` list (see Configuration). |
 | `requireExactVersions` | enabled | Reject version ranges (`[1.0,2.0)`, `(,1.0]`, etc.), `LATEST`, `RELEASE`. ~30 LoC walk over the resolved dep graph. No enforcer equivalent. |
 | `repositoryAllowlist` | `[https://repo.maven.apache.org/maven2]` | Inspect the effective project + session repository list; fail if any active repository URL is not in the allowlist. |
 | `baseline` | `auto` | If `.supply-chain-baseline.json` exists at project root: enforce. Any dep GAV not in baseline = fail. If absent: pass silently. `dump-baseline` mojo writes/refreshes the file. |
@@ -114,6 +114,12 @@ Empty configuration = full hardening with defaults.
       <!-- <ban>log4j:log4j</ban> -->
     </bannedDependencies>
 
+    <minReleaseAgeExclusions>
+      <!-- Bypass the age threshold for your own published artifacts. -->
+      <!-- Prefer pinning to GA, not group wildcards: g:a > g:*. -->
+      <!-- <exclusion>com.wlami:my-artifact</exclusion> -->
+    </minReleaseAgeExclusions>
+
     <pgpKeysMap>${project.basedir}/pgp-keys-map.list</pgpKeysMap>
 
     <overrides>
@@ -145,6 +151,14 @@ Empty configuration = full hardening with defaults.
 `<overrides>` apply per-artifact. Each override matches a GAV pattern (`groupId:artifactId[:version]` with `*` wildcards) and can override:
 - `minReleaseAge` (per-artifact age threshold, including `P0D` to disable)
 - `excludes` for any wrapped check
+
+### `minReleaseAgeExclusions`
+
+Convenience list specifically for skipping the min-release-age check. Each entry is a `GavPattern` (`groupId:artifactId[:version]` with `*` wildcards). Recommended for the common case of "my own published artifact - I don't want to wait three days to consume it".
+
+Resolution order: if a dep matches anything in `minReleaseAgeExclusions`, the check is skipped for that dep. If not, `<overrides>` are consulted next. Otherwise the global `minReleaseAge` applies.
+
+**Security note in docs:** patterns are glob-based. `com.wlami:*` will also match a future artifact published under that group, including one published by an attacker who squats the group. Pin to `groupId:artifactId` whenever possible. Combine with `<repositoryAllowlist>` so excluded artifacts must still come from a trusted repo.
 
 ## Mojos
 
