@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+  <profiles>
+    <profile>
+      <id>it</id>
+      <repositories>
+        <repository>
+          <id>local-it</id>
+          <url>@localRepositoryUrl@</url>
+        </repository>
+        <repository>
+          <id>central</id>
+          <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+  <activeProfiles><activeProfile>it</activeProfile></activeProfiles>
+</settings>

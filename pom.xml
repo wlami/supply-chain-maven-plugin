@@ -31,7 +31,6 @@
 
     <junit.version>5.10.3</junit.version>
     <assertj.version>3.26.3</assertj.version>
-    <wiremock.version>3.9.1</wiremock.version>
     <json-schema-validator.version>1.5.1</json-schema-validator.version>
   </properties>
 
@@ -85,12 +84,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.wiremock</groupId>
-      <artifactId>wiremock-standalone</artifactId>
-      <version>${wiremock.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>com.networknt</groupId>
       <artifactId>json-schema-validator</artifactId>
       <version>${json-schema-validator.version}</version>
@@ -121,7 +114,6 @@
           <projectsDirectory>src/it</projectsDirectory>
           <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
           <settingsFile>src/it/settings.xml</settingsFile>
-          <postBuildHookScript>verify</postBuildHookScript>
         </configuration>
         <executions>
           <execution>
