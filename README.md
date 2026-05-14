@@ -2,6 +2,8 @@
 
 Single-plugin entry point for Maven supply-chain hardening.
 
+[![Maven Central](https://img.shields.io/maven-central/v/com.wlami/supply-chain-maven-plugin.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/com.wlami/supply-chain-maven-plugin)
+[![CI](https://github.com/wlami/supply-chain-maven-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/wlami/supply-chain-maven-plugin/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ## What it checks
