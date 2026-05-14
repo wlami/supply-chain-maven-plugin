@@ -31,7 +31,6 @@
 
     <junit.version>5.10.3</junit.version>
     <assertj.version>3.26.3</assertj.version>
-    <mockito.version>5.12.0</mockito.version>
     <wiremock.version>3.9.1</wiremock.version>
     <json-schema-validator.version>1.5.1</json-schema-validator.version>
   </properties>
@@ -83,12 +82,6 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

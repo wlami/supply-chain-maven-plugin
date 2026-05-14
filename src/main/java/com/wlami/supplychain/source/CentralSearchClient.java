@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
-public final class CentralSearchClient {
+public class CentralSearchClient implements ReleaseDateSource {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private final String baseUrl;
@@ -28,6 +28,7 @@ public final class CentralSearchClient {
         this.http = http;
     }
 
+    @Override
     public Optional<Instant> fetchReleaseDate(String groupId, String artifactId, String version) {
         try {
             String q = URLEncoder.encode("g:" + groupId + " AND a:" + artifactId + " AND v:" + version,
