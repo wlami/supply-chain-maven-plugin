@@ -42,6 +42,15 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         run: mvn -B --no-transfer-progress -Prelease clean deploy
 
+      - name: Stage release assets (dedup-safe)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          mkdir -p release-assets
+          cp target/supply-chain-maven-plugin-*.jar release-assets/
+          cp target/supply-chain-maven-plugin-*.jar.asc release-assets/
+          cp target/supply-chain-maven-plugin-*.pom.asc release-assets/ 2>/dev/null || true
+          ls -la release-assets/
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
@@ -51,7 +60,4 @@ jobs:
           gh release create "$TAG" \
             --title "$TAG" \
             --generate-notes \
-            target/supply-chain-maven-plugin-*.jar \
-            target/supply-chain-maven-plugin-*.jar.asc \
-            target/supply-chain-maven-plugin-*-sources.jar \
-            target/supply-chain-maven-plugin-*-javadoc.jar
+            release-assets/*
