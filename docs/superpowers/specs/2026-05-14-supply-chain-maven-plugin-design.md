@@ -36,7 +36,7 @@ Reference article: ["What can a developer do against supply chain attacks when w
 | Default phase | `validate` |
 | Java baseline | 11 |
 | Maven baseline | 3.8+ |
-| License | TBD (default Apache-2.0) |
+| License | Apache-2.0 |
 
 ## What Maven already provides
 
@@ -268,15 +268,15 @@ Run `mvn supply-chain:report` for full details without failing.
 
 SARIF output is out of scope for v0.1.0; tracked for v0.2.
 
-## Open questions (deferred)
+## Decisions
 
-- License: default Apache-2.0 unless user specifies otherwise.
-- Multi-module behavior: run once per module by default; aggregator goal possibly in v0.2.
+- License: Apache-2.0.
+- Multi-module: `check` runs once per module (default behavior via `validate` phase binding). Aggregator mojo deferred to v0.2.
 - Performance: parallelize Central API calls; bound to 8 concurrent requests by default.
 
 ## Out of scope for v0.1.0
 
-- SARIF / HTML reporters
+- SARIF / HTML reporters. SARIF = Static Analysis Results Interchange Format (OASIS JSON schema). Would let GitHub Code Scanning, IDEs, and security dashboards ingest findings. Deferred to v0.2; v0.1.0 ships console reporter only.
 - Aggregator mojo for multi-module
 - Custom keyserver caching strategies
 - Auto-update of baseline on minor version bumps
