@@ -134,6 +134,8 @@ Empty configuration = full hardening with defaults.
       <dependencyConvergence>true</dependencyConvergence>
       <pgpSignature>true</pgpSignature>
     </checks>
+
+    <sarifOutput>${project.build.directory}/supply-chain.sarif</sarifOutput>
   </configuration>
 </plugin>
 ```
@@ -225,8 +227,13 @@ supply-chain-maven-plugin/
       GavPattern.java
     report/
       Findings.java
-      Finding.java                { check, severity, gav, message }
+      Finding.java                { check, severity, gav, message, location }
+      Reporter.java               interface { write(Findings) }
       ConsoleReporter.java
+      SarifReporter.java
+      sarif/
+        SarifModel.java           internal POJO tree mirroring SARIF 2.1.0 subset
+        InputLocationResolver.java  resolves Maven InputLocation -> SARIF location
   src/test/java/com/wlami/supplychain/
     check/...                     unit tests per check with mock dep graph
   src/it/                         maven-invoker integration tests
@@ -246,17 +253,23 @@ supply-chain-maven-plugin/
 - `org.apache.maven.enforcer:enforcer-rules` - reused programmatically
 - `org.bouncycastle:bcpg-jdk18on` - PGP verification
 - `org.bouncycastle:bcprov-jdk18on`
-- Test: `junit-jupiter`, `assertj`, `wiremock`, `maven-invoker-plugin`
+- `com.fasterxml.jackson.core:jackson-databind` - SARIF JSON serialization (pinned to avoid version-skew with Maven core's transitive)
+- Test: `junit-jupiter`, `assertj`, `wiremock`, `maven-invoker-plugin`, `com.networknt:json-schema-validator` (SARIF schema validation)
 
 ## Testing strategy
 
 - **Unit:** each `Check` against a mock `Context` (synthetic dep graph + mock data sources).
 - **Integration:** `maven-invoker-plugin` runs real Maven builds against fixture projects under `src/it/`. One fixture per pass case + one per fail case per check.
 - **Network mocks:** Wiremock for Central Search and keyserver in unit tests; real Central in a single nightly smoke IT.
+- **SARIF:** unit test `SarifReporter` output against the official SARIF 2.1.0 JSON schema using `json-schema-validator`. Integration tests assert that `target/supply-chain.sarif` exists, parses, validates, and contains the expected `results[]` entries.
 
 ## Reporting
 
-Console reporter prints a grouped summary:
+Two reporters run in parallel on every `check` / `report` invocation:
+
+### Console reporter
+
+Grouped summary, severity-coloured:
 
 ```
 [ERROR] supply-chain check failed:
@@ -266,7 +279,36 @@ Console reporter prints a grouped summary:
 Run `mvn supply-chain:report` for full details without failing.
 ```
 
-SARIF output is out of scope for v0.1.0; tracked for v0.2.
+### SARIF reporter
+
+SARIF 2.1.0 JSON written to `${project.build.directory}/supply-chain.sarif` (configurable; set to empty to disable). Output is consumable by GitHub Code Scanning, IntelliJ / VS Code SARIF viewers, and security dashboards.
+
+**Structure:**
+
+- `runs[0].tool.driver` - name `supply-chain-maven-plugin`, version, `rules[]` listing every check (id, name, shortDescription, fullDescription, helpUri pointing at plugin docs).
+- `runs[0].results[]` - one entry per finding:
+  - `ruleId` - check ID (`minReleaseAge`, `bannedDependencies`, ...)
+  - `level` - `error` | `warning` | `note` mapped from severity
+  - `message.text` - human-readable finding (same text as console)
+  - `locations[]` - resolved from Maven's `InputLocation` API:
+    - Direct deps: `physicalLocation` with `artifactLocation.uri` = relative path to declaring `pom.xml`, `region.startLine` = line of the `<dependency>` element
+    - Transitive deps: file-level location on root `pom.xml` + `logicalLocations[].fullyQualifiedName` = the resolved transitive chain (e.g. `com.example:foo:1.0.0 -> com.example:bar:2.0.0`)
+  - `properties` - bag with `gav`, `publishedAt` (where applicable), `severity`, `check` metadata
+  - `partialFingerprints.gavCheckId` - stable hash `sha1(gav + checkId)` for de-dup across runs
+
+**Configuration:**
+
+```xml
+<sarifOutput>${project.build.directory}/supply-chain.sarif</sarifOutput>
+<!-- empty string disables SARIF -->
+```
+
+**Implementation notes:**
+
+- JSON written via Jackson (already transitive through `maven-core`; explicit dependency added in plugin POM to avoid version-skew bugs).
+- No external SARIF library: hand-rolled writer (~120 LoC) targeting only the subset of the schema we emit. Avoids dragging in unmaintained libs.
+- Output file always written even on success (empty `results[]`), so CI/Code Scanning consumers always have a fresh artifact.
+- File written before the mojo throws on `onViolation=FAIL`, so a failing build still produces the SARIF.
 
 ## Decisions
 
@@ -276,7 +318,7 @@ SARIF output is out of scope for v0.1.0; tracked for v0.2.
 
 ## Out of scope for v0.1.0
 
-- SARIF / HTML reporters. SARIF = Static Analysis Results Interchange Format (OASIS JSON schema). Would let GitHub Code Scanning, IDEs, and security dashboards ingest findings. Deferred to v0.2; v0.1.0 ships console reporter only.
+- HTML reporter
 - Aggregator mojo for multi-module
 - Custom keyserver caching strategies
 - Auto-update of baseline on minor version bumps
