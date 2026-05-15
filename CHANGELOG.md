@@ -4,6 +4,12 @@ All notable changes to this project will be documented here. Format loosely foll
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-15
+
+### Fixed
+
+- SARIF output now reports the actual plugin version (`${plugin.version}` Maven-injected). 0.2.0 still wrote `"version": "0.1.0"` because the hardcoded fallback always won.
+
 ## [0.2.0] - 2026-05-15
 
 ### Added
@@ -45,6 +51,7 @@ Initial release.
 - Reporters: console + SARIF 2.1.0 (schema-validated). SARIF written to `target/supply-chain.sarif` by default.
 - Release-date cache at `~/.m2/repository/.supply-chain-cache/release-dates.json`; PGP key cache at `pgp-keys/`.
 
-[Unreleased]: https://github.com/wlami/supply-chain-maven-plugin/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/wlami/supply-chain-maven-plugin/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/wlami/supply-chain-maven-plugin/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/wlami/supply-chain-maven-plugin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/wlami/supply-chain-maven-plugin/releases/tag/v0.1.0
