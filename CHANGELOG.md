@@ -11,6 +11,15 @@ All notable changes to this project will be documented here. Format loosely foll
 ### Changed
 
 - `checksumStrict` default flipped from `warn` to `off`. PGP signature verification (also default on) supersedes the SHA1 transport-level check, so the nag was redundant. Flip it back to `warn` / `fail` if you want both layers.
+- `onNetworkError` default flipped from `FAIL` to `WARN`. A single slow / unreachable Central response no longer breaks consumer builds; it emits a per-artifact warning and processing continues.
+
+### Fixed
+
+- `MinReleaseAgeCheck` now catches per-artifact data-source failures (e.g. Central API timeouts) and emits a finding at the configured severity instead of throwing. Type-`pom` dependencies are skipped from the age check (we only care about resolved binary artifacts).
+
+### Documented
+
+- README: how to disable PGP signature verification globally when your dep graph has unsigned artifacts.
 
 ## [0.1.0] - 2026-05-14
 

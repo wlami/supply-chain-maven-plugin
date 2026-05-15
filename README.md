@@ -37,6 +37,40 @@ That's it. `<extensions>true</extensions>` activates a lifecycle participant tha
 
 If you'd rather declare the execution explicitly (or want to bind to a different phase), drop `<extensions>true</extensions>` and add `<executions><execution><goals><goal>check</goal></goals></execution></executions>` the usual way.
 
+## Disabling PGP signature verification
+
+PGP is on by default. Most artifacts on Maven Central ship a `.asc`, but plenty don't (older releases, internal mirrors, deps from non-Central repos). Two ways to deal:
+
+**Disable globally** - if signatures aren't available across your dep graph:
+
+```xml
+<configuration>
+  <checks>
+    <pgpSignature>false</pgpSignature>
+  </checks>
+</configuration>
+```
+
+**Disable per-artifact (preferred when only a handful lack signatures)** - keep PGP on, let the offending artifacts pass:
+
+```xml
+<configuration>
+  <pgpKeysMap>${project.basedir}/pgp-keys-map.list</pgpKeysMap>
+</configuration>
+```
+
+`pgp-keys-map.list`:
+
+```
+# Allow these specific GAVs to pass without a signature.
+com.legacy:unsigned-artifact:* = noSig
+io.github.example:other-unsigned = noSig
+```
+
+(The `noSig` token is documented separately; for now the cleanest "I know what I'm doing" path is the global toggle above.)
+
+If you also see timeouts contacting `keys.openpgp.org`, the verifier emits a per-artifact finding under whatever `onNetworkError` is set to (default `WARN`).
+
 ## Excluding your own artifacts from `minReleaseAge`
 
 Publishing your own artifact and want to consume it immediately without waiting three days? Add it to the dedicated exclusion list:

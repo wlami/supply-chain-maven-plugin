@@ -115,6 +115,31 @@ class MinReleaseAgeCheckTest {
     }
 
     @Test
+    void networkFailureEmitsWarningInsteadOfThrowing(@TempDir Path tmp) throws Exception {
+        Instant now = Instant.parse("2026-05-14T12:00:00Z");
+        ReleaseDateSource throwingSource = (g, a, v) -> { throw new RuntimeException("request timed out"); };
+        PluginConfig cfg = new PluginConfig();
+        // default onNetworkError = WARN
+        CheckContext ctx = new CheckContext(null, null, cfg, Set.of(artifact("com.example", "foo", "1.0.0")));
+        Findings f = new MinReleaseAgeCheck(throwingSource, Clock.fixed(now, ZoneId.of("UTC")), cache(tmp)).run(ctx);
+        assertThat(f.all()).hasSize(1);
+        assertThat(f.all().get(0).severity()).isEqualTo(Severity.WARNING);
+        assertThat(f.all().get(0).message()).contains("could not resolve release date").contains("timed out");
+    }
+
+    @Test
+    void networkFailureWithFailModeEmitsError(@TempDir Path tmp) throws Exception {
+        Instant now = Instant.parse("2026-05-14T12:00:00Z");
+        ReleaseDateSource throwingSource = (g, a, v) -> { throw new RuntimeException("request timed out"); };
+        PluginConfig cfg = new PluginConfig();
+        cfg.onNetworkError = "FAIL";
+        CheckContext ctx = new CheckContext(null, null, cfg, Set.of(artifact("com.example", "foo", "1.0.0")));
+        Findings f = new MinReleaseAgeCheck(throwingSource, Clock.fixed(now, ZoneId.of("UTC")), cache(tmp)).run(ctx);
+        assertThat(f.all()).hasSize(1);
+        assertThat(f.all().get(0).severity()).isEqualTo(Severity.ERROR);
+    }
+
+    @Test
     void cacheHitSkipsSourceCall(@TempDir Path tmp) throws Exception {
         Instant now = Instant.parse("2026-05-14T12:00:00Z");
         ReleaseDateCache c = cache(tmp);
