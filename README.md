@@ -28,14 +28,14 @@ Add to your `pom.xml`:
 <plugin>
   <groupId>com.wlami</groupId>
   <artifactId>supply-chain-maven-plugin</artifactId>
-  <version>0.1.0</version>
-  <executions>
-    <execution><goals><goal>check</goal></goals></execution>
-  </executions>
+  <version>0.2.0</version>
+  <extensions>true</extensions>
 </plugin>
 ```
 
-Empty configuration applies the full hardened defaults. Run `mvn validate` to execute.
+That's it. `<extensions>true</extensions>` activates a lifecycle participant that auto-binds the `check` goal to the `validate` phase. No `<executions>` block needed. Empty configuration applies the full hardened defaults.
+
+If you'd rather declare the execution explicitly (or want to bind to a different phase), drop `<extensions>true</extensions>` and add `<executions><execution><goals><goal>check</goal></goals></execution></executions>` the usual way.
 
 ## Excluding your own artifacts from `minReleaseAge`
 

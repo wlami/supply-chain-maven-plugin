@@ -20,7 +20,7 @@ class ChecksumPolicyCheckTest {
     }
 
     @Test
-    void warnsWhenChecksumPolicyNotStrict() throws Exception {
+    void warnsWhenExplicitlyEnabledAndPolicyNotStrict() throws Exception {
         MavenExecutionRequest req = new DefaultMavenExecutionRequest();
         // no global checksum policy set
         MavenSession session = new FakeSession(req);
@@ -31,6 +31,16 @@ class ChecksumPolicyCheckTest {
             new CheckContext(null, session, cfg, java.util.Set.of()));
         assertThat(f.all()).hasSize(1);
         assertThat(f.all().get(0).severity()).isEqualTo(Severity.WARNING);
+    }
+
+    @Test
+    void offByDefaultMeansNoFindings() throws Exception {
+        MavenExecutionRequest req = new DefaultMavenExecutionRequest();
+        MavenSession session = new FakeSession(req);
+        PluginConfig cfg = new PluginConfig();
+        // default checksumStrict = "off"; ChecksumPolicyCheck.isEnabled returns false
+        assertThat(new ChecksumPolicyCheck().isEnabled(
+            new CheckContext(null, session, cfg, java.util.Set.of()))).isFalse();
     }
 
     @Test
