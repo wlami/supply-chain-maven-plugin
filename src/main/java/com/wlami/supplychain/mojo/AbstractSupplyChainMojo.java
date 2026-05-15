@@ -36,6 +36,10 @@ public abstract class AbstractSupplyChainMojo extends AbstractMojo {
     @Parameter(defaultValue = "FAIL") protected String onViolation;
     @Parameter(defaultValue = "FAIL") protected String onNetworkError;
 
+    /** Maven injects the version this plugin is running as (e.g. "0.2.0", "0.3.0-SNAPSHOT"). */
+    @Parameter(defaultValue = "${plugin.version}", readonly = true)
+    protected String pluginVersion;
+
     protected PluginConfig buildConfig() {
         PluginConfig c = new PluginConfig();
         if (minReleaseAge != null) c.minReleaseAge = minReleaseAge;
@@ -72,13 +76,9 @@ public abstract class AbstractSupplyChainMojo extends AbstractMojo {
     protected void writeReports(Findings findings, PluginConfig cfg) {
         new ConsoleReporter(System.out).write(findings);
         if (cfg.sarifOutput != null && !cfg.sarifOutput.isEmpty()) {
+            String version = pluginVersion == null || pluginVersion.isEmpty() ? "unknown" : pluginVersion;
             new SarifReporter(Paths.get(cfg.sarifOutput),
-                "supply-chain-maven-plugin", pluginVersion()).write(findings);
+                "supply-chain-maven-plugin", version).write(findings);
         }
-    }
-
-    private String pluginVersion() {
-        return getClass().getPackage().getImplementationVersion() != null
-            ? getClass().getPackage().getImplementationVersion() : "0.1.0";
     }
 }
