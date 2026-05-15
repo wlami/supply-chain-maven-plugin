@@ -39,19 +39,30 @@ public final class MinReleaseAgeCheck implements Check {
         List<GavPattern> exclusions = new ArrayList<>();
         for (String raw : ctx.config().minReleaseAgeExclusions) exclusions.add(GavPattern.parse(raw));
 
+        String onError = ctx.config().onNetworkError;
         boolean cacheDirty = false;
         for (Artifact a : ctx.dependencies()) {
             if (matchesAny(exclusions, a)) continue;
+            if ("pom".equalsIgnoreCase(a.getType())) continue;
             String[] minSpec = effectiveMin(ctx, a, defaultMinRaw);
             Duration min = Duration.parse(minSpec[1]);
             if (min.isZero() || min.isNegative()) continue;
 
             String gav = a.getGroupId() + ":" + a.getArtifactId() + ":" + a.getVersion();
             Optional<Instant> cached = cache.get(gav);
-            Optional<Instant> published = cached.isPresent() ? cached
-                : client.fetchReleaseDate(a.getGroupId(), a.getArtifactId(), a.getVersion());
+            Optional<Instant> published;
+            if (cached.isPresent()) {
+                published = cached;
+            } else {
+                try {
+                    published = client.fetchReleaseDate(a.getGroupId(), a.getArtifactId(), a.getVersion());
+                } catch (RuntimeException e) {
+                    findings.add(networkErrorFinding(gav, e, onError));
+                    continue;
+                }
+                if (published.isPresent()) { cache.put(gav, published.get()); cacheDirty = true; }
+            }
             if (published.isEmpty()) continue;
-            if (cached.isEmpty()) { cache.put(gav, published.get()); cacheDirty = true; }
 
             Duration age = Duration.between(published.get(), now);
             if (age.compareTo(min) < 0) {
@@ -68,6 +79,27 @@ public final class MinReleaseAgeCheck implements Check {
         }
         if (cacheDirty) cache.flush();
         return findings;
+    }
+
+    private static Finding networkErrorFinding(String gav, RuntimeException e, String onError) {
+        Severity sev;
+        switch (onError == null ? "WARN" : onError.toUpperCase()) {
+            case "FAIL": sev = Severity.ERROR; break;
+            case "SKIP": sev = Severity.NOTE; break;
+            default:     sev = Severity.WARNING;
+        }
+        return Finding.builder()
+            .checkId("minReleaseAge")
+            .severity(sev)
+            .gav(gav)
+            .message("could not resolve release date (" + rootCauseMessage(e) + ")")
+            .build();
+    }
+
+    private static String rootCauseMessage(Throwable t) {
+        Throwable cur = t;
+        while (cur.getCause() != null && cur.getCause() != cur) cur = cur.getCause();
+        return cur.getMessage() == null ? cur.getClass().getSimpleName() : cur.getMessage();
     }
 
     private static String[] effectiveMin(CheckContext ctx, Artifact a, String def) {

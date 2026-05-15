@@ -16,6 +16,7 @@ public final class PluginConfig {
     public String sarifOutput;
     /** "FAIL" | "WARN" */
     public String onViolation = "FAIL";
-    /** "FAIL" | "WARN" | "SKIP" */
-    public String onNetworkError = "FAIL";
+    /** "FAIL" | "WARN" | "SKIP". WARN by default: a single slow / unreachable Central response
+     *  shouldn't break consumer builds. Set to FAIL to make any network issue a hard error. */
+    public String onNetworkError = "WARN";
 }
