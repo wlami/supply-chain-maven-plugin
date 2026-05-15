@@ -4,6 +4,14 @@ All notable changes to this project will be documented here. Format loosely foll
 
 ## [Unreleased]
 
+### Added
+
+- Auto-bind: declaring the plugin with `<extensions>true</extensions>` now wires the `check` goal into the `validate` phase automatically. No more boilerplate `<executions>` block.
+
+### Changed
+
+- `checksumStrict` default flipped from `warn` to `off`. PGP signature verification (also default on) supersedes the SHA1 transport-level check, so the nag was redundant. Flip it back to `warn` / `fail` if you want both layers.
+
 ## [0.1.0] - 2026-05-14
 
 Initial release.

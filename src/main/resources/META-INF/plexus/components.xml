@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-set>
+  <components>
+    <component>
+      <role>org.apache.maven.AbstractMavenLifecycleParticipant</role>
+      <role-hint>supply-chain</role-hint>
+      <implementation>com.wlami.supplychain.SupplyChainLifecycleParticipant</implementation>
+      <instantiation-strategy>singleton</instantiation-strategy>
+    </component>
+  </components>
+</component-set>
